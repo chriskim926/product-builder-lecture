@@ -315,6 +315,25 @@
       </div>
     </main>
 
+    <!-- 댓글 (Disqus) -->
+    <section id="comments" class="mt-8 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200/80">
+      <h3 class="text-base md:text-lg font-bold text-slate-800 mb-4">💬 댓글</h3>
+      <div id="disqus_thread"></div>
+      <script>
+        var disqus_config = function () {
+          this.page.url = 'https://chriskim926.github.io/product-builder-lecture/';
+          this.page.identifier = 'product-builder-lecture-main';
+        };
+        (function () {
+          var d = document, s = d.createElement('script');
+          s.src = 'https://chriskim.disqus.com/embed.js';
+          s.setAttribute('data-timestamp', +new Date());
+          (d.head || d.body).appendChild(s);
+        })();
+      </script>
+      <noscript>댓글을 보려면 JavaScript를 켜 주세요. <a href="https://disqus.com/?ref_noscript">Disqus 댓글</a></noscript>
+    </section>
+
     <!-- 바닥글 -->
     <footer class="mt-12 text-center text-xs text-slate-400 space-y-1">
       <p>※ 로또 6/45는 매주 토요일 오후 8시 35분에 추첨됩니다.</p>
