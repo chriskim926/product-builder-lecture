@@ -128,6 +128,19 @@
     html.dark .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
     html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
     body, section, header div { transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
+
+    /* 탭 & 사주 폼 */
+    .tab-btn { padding: 0.55rem 1.1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; background: #fff; color: #475569; border: 1px solid #e2e8f0; transition: all 0.15s; }
+    .tab-btn.tab-active { background: #f59e0b; color: #fff; border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+    .saju-input { display: block; width: 100%; padding: 0.65rem 0.8rem; border-radius: 0.9rem; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-size: 0.95rem; font-weight: 500; }
+    .saju-input:focus { outline: 2px solid #f59e0b; outline-offset: 1px; }
+    .saju-pillar { text-align: center; padding: 0.6rem 0.25rem; border-radius: 0.9rem; border: 1px solid #e2e8f0; background: #f8fafc; }
+    .saju-char { font-size: 1.6rem; font-weight: 800; line-height: 1.25; }
+    html.dark .tab-btn { background: #1e293b; color: #cbd5e1; border-color: #334155; }
+    html.dark .tab-btn.tab-active { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+    html.dark .saju-input { background: #0f172a; color: #e2e8f0; border-color: #475569; }
+    html.dark .saju-pillar { background: #273449; border-color: #334155; }
+    html.dark .text-slate-900 strong, html.dark strong { color: #f8fafc; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-amber-200 antialiased">
@@ -151,6 +164,44 @@
     </header>
 
     <main class="space-y-6">
+      <!-- 탭 -->
+      <div class="flex justify-center gap-2">
+        <button id="tabSaju" type="button" class="tab-btn">🔮 이번 주 사주 로또</button>
+        <button id="tabRandom" type="button" class="tab-btn">🎲 랜덤 추첨</button>
+      </div>
+
+      <!-- 사주 로또 패널 -->
+      <div id="sajuPanel" class="space-y-6">
+        <section class="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/70 border border-slate-200/60">
+          <h2 class="text-lg md:text-xl font-bold text-slate-800 mb-1">나의 사주 입력</h2>
+          <p class="text-xs md:text-sm text-slate-500 mb-5">생년월일(양력)과 태어난 시간으로 사주 오행을 분석하고, 이번 주 기운과 잘 맞는 번호를 골라 드려요. 입력한 정보는 이 기기 안에서만 처리돼요.</p>
+          <form id="sajuForm" class="grid gap-4 sm:grid-cols-3">
+            <label class="block text-sm font-semibold text-slate-600">이름 (선택)
+              <input name="sajuName" id="sajuName" type="text" maxlength="20" placeholder="홍길동" class="saju-input mt-1.5">
+            </label>
+            <label class="block text-sm font-semibold text-slate-600">생년월일 (양력)
+              <input name="sajuBirth" id="sajuBirth" type="date" min="1900-01-01" required class="saju-input mt-1.5">
+            </label>
+            <label class="block text-sm font-semibold text-slate-600">태어난 시간
+              <select name="sajuHour" id="sajuHour" class="saju-input mt-1.5"></select>
+            </label>
+            <div class="sm:col-span-3 flex justify-center">
+              <button type="submit" class="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white font-bold text-base md:text-lg rounded-2xl shadow-lg shadow-amber-500/30 transition duration-150">
+                내 사주로 번호 받기
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section id="sajuResult" class="hidden bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/70 border border-slate-200/60"></section>
+
+        <p class="text-[11px] md:text-xs text-slate-400 text-center leading-relaxed px-2">
+          ※ 사주 풀이와 번호는 전통 오행 이론을 바탕으로 한 <strong>재미용 콘텐츠</strong>예요. 로또 추첨은 완전한 무작위라서 어떤 번호도 당첨 확률을 높이지 못해요. 절기는 근사값을 사용해 경계일 출생은 오차가 있을 수 있어요. 과도한 구매는 삼가 주세요.
+        </p>
+      </div>
+
+      <!-- 랜덤 추첨 패널 -->
+      <div id="randomPanel" class="space-y-6 hidden">
       <!-- 로또 추첨 메인 디스플레이 카드 -->
       <section class="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/70 border border-slate-200/60 relative overflow-hidden">
         
@@ -230,6 +281,7 @@
           </div>
         </div>
       </section>
+      </div>
     </main>
 
     <!-- 바닥글 -->
@@ -532,6 +584,323 @@
         historyList.appendChild(div);
       });
     }
+
+    /* ===================== 사주 로또 ===================== */
+    const STEMS = ['갑','을','병','정','무','기','경','신','임','계'];
+    const STEMS_H = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+    const BRANCHES = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+    const BRANCHES_H = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+    const ELEMENTS = ['목','화','토','금','수'];
+    const ELEMENTS_H = { 목: '木', 화: '火', 토: '土', 금: '金', 수: '水' };
+    const STEM_EL = ['목','목','화','화','토','토','금','금','수','수'];
+    const BRANCH_EL = ['수','토','목','목','토','화','화','토','금','금','토','수'];
+    const EL_COLOR = { 목: '#22c55e', 화: '#ef4444', 토: '#eab308', 금: '#94a3b8', 수: '#3b82f6' };
+    // 오행 상생: 목→화→토→금→수→목
+    const GENERATES = { 목: '화', 화: '토', 토: '금', 금: '수', 수: '목' };
+    // 오행 상극: 목→토→수→화→금→목
+    const CONTROLS = { 목: '토', 토: '수', 수: '화', 화: '금', 금: '목' };
+    // 하도(河圖) 수리: 1·6 水, 2·7 火, 3·8 木, 4·9 金, 5·10 土
+    function numberElement(n) {
+      return ({ 1: '수', 2: '화', 3: '목', 4: '금', 5: '토', 6: '수', 7: '화', 8: '목', 9: '금', 0: '토' })[n % 10];
+    }
+    const HOUR_LABELS = ['자시 (23:00~01:00)','축시 (01:00~03:00)','인시 (03:00~05:00)','묘시 (05:00~07:00)','진시 (07:00~09:00)','사시 (09:00~11:00)','오시 (11:00~13:00)','미시 (13:00~15:00)','신시 (15:00~17:00)','유시 (17:00~19:00)','술시 (19:00~21:00)','해시 (21:00~23:00)'];
+
+    const DAY_MASTER_TEXT = {
+      목: '나무처럼 성장과 도전을 좋아하는 기질이에요. 새로운 일을 시작하는 추진력이 있고, 곧게 뻗으려는 자존심도 있어요.',
+      화: '불처럼 열정적이고 표현력이 풍부한 기질이에요. 분위기를 밝게 만들지만 감정의 기복이 있을 수 있어요.',
+      토: '대지처럼 듬직하고 신뢰를 주는 기질이에요. 한번 마음먹으면 꾸준히 밀고 가는 끈기가 있어요.',
+      금: '쇠처럼 결단력 있고 원칙을 중시하는 기질이에요. 맺고 끊음이 분명하고 완성도를 추구해요.',
+      수: '물처럼 유연하고 지혜로운 기질이에요. 상황 적응력이 좋고 생각이 깊은 편이에요.'
+    };
+    const WEEK_EL_TEXT = {
+      목: '새로운 시도와 성장의 기운이 도는 한 주예요. 계획을 세우고 움직이기 좋아요.',
+      화: '활기와 인연의 기운이 도는 한 주예요. 사람을 만나고 표현하기 좋아요.',
+      토: '안정과 정리의 기운이 도는 한 주예요. 차분히 기반을 다지기 좋아요.',
+      금: '결단과 마무리의 기운이 도는 한 주예요. 미뤄 둔 일을 정리하기 좋아요.',
+      수: '지혜와 흐름의 기운이 도는 한 주예요. 직관을 믿고 유연하게 움직이기 좋아요.'
+    };
+
+    const mod = (a, n) => ((a % n) + n) % n;
+
+    function julianDay(y, m, d) {
+      return Math.floor(Date.UTC(y, m - 1, d) / 86400000) + 2440588;
+    }
+    function dayPillarIndex(y, m, d) {
+      return mod(julianDay(y, m, d) - 2415021 + 10, 60); // 1900-01-01 = 갑술일(10)
+    }
+    // 절기(입춘·경칩…) 근사 경계: [월, 일, 월지(子=0)] — 해에 따라 ±1일 오차 가능
+    const TERMS = [[1, 6, 1], [2, 4, 2], [3, 6, 3], [4, 5, 4], [5, 6, 5], [6, 6, 6], [7, 7, 7], [8, 8, 8], [9, 8, 9], [10, 8, 10], [11, 7, 11], [12, 7, 0]];
+    function monthBranch(m, d) {
+      let b = 0; // 1/6 이전은 전년 12/7부터 이어지는 자월
+      TERMS.forEach(([tm, td, tb]) => { if (m > tm || (m === tm && d >= td)) b = tb; });
+      return b;
+    }
+    function calcPillars(y, m, d, hourBranch) {
+      const sajuYear = (m < 2 || (m === 2 && d < 4)) ? y - 1 : y;
+      const yi = mod(sajuYear - 4, 60);
+      const yearStem = yi % 10;
+      const mb = monthBranch(m, d);
+      const monthStem = mod(mod(yearStem, 5) * 2 + 2 + mod(mb - 2, 12), 10);
+      const di = dayPillarIndex(y, m, d);
+      const dayStem = di % 10;
+      const pillars = [
+        { label: '연주', s: yearStem, b: yi % 12 },
+        { label: '월주', s: monthStem, b: mb },
+        { label: '일주', s: dayStem, b: di % 12 }
+      ];
+      if (hourBranch !== null) {
+        pillars.push({ label: '시주', s: mod(mod(dayStem, 5) * 2 + hourBranch, 10), b: hourBranch });
+      }
+      return pillars;
+    }
+
+    function hashString(str) {
+      let h = 1779033703 ^ str.length;
+      for (let i = 0; i < str.length; i++) {
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return (h >>> 0) || 1;
+    }
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return function () {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function roleOf(dayEl, el) {
+      if (el === dayEl) return '비겁';
+      if (GENERATES[el] === dayEl) return '인성';
+      if (GENERATES[dayEl] === el) return '식상';
+      if (CONTROLS[dayEl] === el) return '재성';
+      return '관성';
+    }
+    const ROLE_TEXT = {
+      비겁: '나와 같은 기운(힘·자신감)',
+      인성: '나를 도와주는 기운(귀인·학습)',
+      식상: '내가 펼치는 기운(표현·재능)',
+      재성: '내가 다루는 기운(재물·결과)',
+      관성: '나를 단련하는 기운(책임·명예)'
+    };
+
+    function getWeekStart(now) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      d.setDate(d.getDate() - mod(d.getDay() - 1, 7)); // 월요일 시작
+      return d;
+    }
+    const fmtDate = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
+
+    function analyzeSaju(input, now) {
+      const pillars = calcPillars(input.y, input.m, input.d, input.hour);
+      const dayMasterStem = pillars[2].s;
+      const dayEl = STEM_EL[dayMasterStem];
+
+      const natal = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
+      pillars.forEach((p, i) => {
+        natal[STEM_EL[p.s]] += 1;
+        natal[BRANCH_EL[p.b]] += 1;
+      });
+      natal[dayEl] -= 1; // 일간(나 자신)은 제외
+      const total = Object.values(natal).reduce((a, b) => a + b, 0);
+
+      const selfCount = Object.keys(natal).filter((e) => ['비겁', '인성'].includes(roleOf(dayEl, e)))
+        .reduce((a, e) => a + natal[e], 0);
+      const isStrong = selfCount / total >= 0.5;
+
+      // 이번 주(월~일) 일진 기운 + 이번 달 월지 기운
+      const weekStart = getWeekStart(now);
+      const weekEl = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
+      for (let i = 0; i < 7; i++) {
+        const dt = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i);
+        const idx = dayPillarIndex(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+        weekEl[STEM_EL[idx % 10]] += 1;
+        weekEl[BRANCH_EL[idx % 12]] += 1;
+      }
+      const monthB = monthBranch(now.getMonth() + 1, now.getDate());
+      weekEl[BRANCH_EL[monthB]] += 2;
+      const weekTop = ELEMENTS.slice().sort((a, b) => weekEl[b] - weekEl[a])[0];
+
+      // 오행별 가중치: 신강이면 설기(식상·재성·관성), 신약이면 보강(인성·비겁)을 좋게 본다
+      const favorableRoles = isStrong ? ['식상', '재성', '관성'] : ['인성', '비겁'];
+      const weights = {};
+      ELEMENTS.forEach((el) => {
+        const role = roleOf(dayEl, el);
+        let w = favorableRoles.includes(role) ? 2 : 0.6;
+        if (natal[el] === 0) w += 1.5; else if (natal[el] === 1) w += 0.7;
+        if (el === weekTop) w += 0.8;
+        weights[el] = w;
+      });
+      const ranked = ELEMENTS.slice().sort((a, b) => weights[b] - weights[a]);
+
+      return { pillars, dayEl, dayMasterStem, natal, total, isStrong, weekEl, weekTop, weights, ranked, weekStart };
+    }
+
+    function pickNumbers(input, analysis, gameIdx) {
+      const birthNums = {};
+      [input.m, input.d, input.y % 100].forEach((n, i) => {
+        if (n >= 1 && n <= 45) birthNums[n] = ['생월', '생일', '출생연도 끝자리'][i];
+      });
+      const ws = analysis.weekStart;
+      const seed = hashString(`${input.y}-${input.m}-${input.d}-${input.hour}-${ws.getFullYear()}-${ws.getMonth()}-${ws.getDate()}-${gameIdx}`);
+      const rnd = mulberry32(seed);
+
+      const pool = [];
+      for (let n = 1; n <= 45; n++) {
+        const el = numberElement(n);
+        let w = analysis.weights[el];
+        if (birthNums[n]) w *= 1.7;
+        pool.push({ n, el, w });
+      }
+      const picked = [];
+      while (picked.length < 6) {
+        const sum = pool.reduce((a, p) => a + p.w, 0);
+        let r = rnd() * sum;
+        let idx = 0;
+        for (; idx < pool.length - 1; idx++) {
+          r -= pool[idx].w;
+          if (r <= 0) break;
+        }
+        picked.push(pool.splice(idx, 1)[0]);
+      }
+      picked.sort((a, b) => a.n - b.n);
+      return picked.map((p) => ({ ...p, birthTag: birthNums[p.n] || null }));
+    }
+
+    function numberReason(p, analysis) {
+      const role = roleOf(analysis.dayEl, p.el);
+      const parts = [];
+      const cnt = analysis.natal[p.el];
+      const elName = `${ELEMENTS_H[p.el]}(${p.el})`;
+      if (cnt === 0) parts.push(`내 사주에 ${elName} 기운이 없어 채워 주는 수`);
+      else if (cnt === 1) parts.push(`내 사주에 ${elName} 기운이 적어 보강해 주는 수`);
+      else parts.push(`내 사주의 ${elName} 기운(${cnt}개)과 어울리는 수`);
+      parts.push(`${ROLE_TEXT[role]}`);
+      if (p.el === analysis.weekTop) parts.push('이번 주 가장 강한 기운');
+      if (p.birthTag) parts.push(`내 ${p.birthTag}와 같은 숫자`);
+      return parts.join(' · ');
+    }
+
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let sajuState = null; // { input, analysis, gameIdx }
+
+    function renderSaju() {
+      const { input, analysis: a, gameIdx } = sajuState;
+      const nums = pickNumbers(input, a, gameIdx);
+      const nameLabel = input.name ? `${esc(input.name)}님` : '고객님';
+      const out = document.getElementById('sajuResult');
+
+      const pillarHtml = a.pillars.map((p) => `
+        <div class="saju-pillar">
+          <div class="text-[11px] text-slate-400 font-semibold mb-1">${p.label}</div>
+          <div class="saju-char" style="color:${EL_COLOR[STEM_EL[p.s]]}">${STEMS_H[p.s]}</div>
+          <div class="saju-char" style="color:${EL_COLOR[BRANCH_EL[p.b]]}">${BRANCHES_H[p.b]}</div>
+          <div class="text-[11px] text-slate-500 mt-1">${STEMS[p.s]}${BRANCHES[p.b]}</div>
+        </div>`).join('');
+
+      const maxCnt = Math.max(1, ...Object.values(a.natal));
+      const barHtml = ELEMENTS.map((el) => `
+        <div class="flex items-center gap-2 text-xs">
+          <span class="w-12 font-bold" style="color:${EL_COLOR[el]}">${ELEMENTS_H[el]} ${el}</span>
+          <div class="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden"><div style="width:${(a.natal[el] / maxCnt) * 100}%;background:${EL_COLOR[el]};height:100%"></div></div>
+          <span class="w-5 text-right text-slate-500">${a.natal[el]}</span>
+        </div>`).join('');
+
+      const lacking = ELEMENTS.filter((e) => a.natal[e] === 0);
+      const strongestNatal = ELEMENTS.slice().sort((x, y) => a.natal[y] - a.natal[x])[0];
+      const dayStemName = `${STEMS_H[a.dayMasterStem]}(${STEMS[a.dayMasterStem]})`;
+      const readingLines = [
+        `<strong>일간 ${dayStemName} · ${ELEMENTS_H[a.dayEl]}(${a.dayEl})</strong> — ${DAY_MASTER_TEXT[a.dayEl]}`,
+        `사주 전체로는 <strong>${ELEMENTS_H[strongestNatal]}(${strongestNatal})</strong> 기운이 가장 많고, ${lacking.length ? `<strong>${lacking.map((e) => `${ELEMENTS_H[e]}(${e})`).join(', ')}</strong> 기운이 비어 있어요.` : '다섯 기운이 모두 고르게 있어요.'} 나의 힘은 ${a.isStrong ? '비교적 강한 편이라, 기운을 펼쳐 쓰는 식상·재성·관성 기운이 균형을 맞춰 줘요.' : '비교적 여린 편이라, 나를 도와주는 인성·비겁 기운이 힘이 돼요.'}`,
+        `이번 주(${fmtDate(a.weekStart)}~) 흐름은 <strong>${ELEMENTS_H[a.weekTop]}(${a.weekTop})</strong> 기운이 가장 강해요. ${WEEK_EL_TEXT[a.weekTop]}`,
+        `그래서 이번 주 나와 잘 맞는 기운은 <strong>${a.ranked.slice(0, 2).map((e) => `${ELEMENTS_H[e]}(${e})`).join(' → ')}</strong> 순서예요. 이 기운에 해당하는 번호(하도 수리 기준)를 더 높은 비중으로 골랐어요.`
+      ];
+      if (!input.hasHour) readingLines.push('태어난 시간을 입력하지 않아 시주(時柱)는 제외하고 풀이했어요.');
+
+      const ballsHtml = nums.map((p) => `
+        <div class="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
+          <div class="lotto-ball ${getBallColorClass(p.n)} w-11 h-11 text-base shrink-0">${p.n}</div>
+          <div class="text-sm leading-snug">
+            <span class="font-bold" style="color:${EL_COLOR[p.el]}">${ELEMENTS_H[p.el]}</span>
+            <span class="text-slate-600">${numberReason(p, a)}</span>
+          </div>
+        </div>`).join('');
+
+      out.innerHTML = `
+        <div class="text-center mb-5">
+          <div class="text-xs font-bold tracking-widest text-slate-400">THIS WEEK · ${fmtDate(a.weekStart)} ~</div>
+          <h3 class="text-xl md:text-2xl font-black text-slate-900 mt-1">${nameLabel}의 이번 주 사주 로또</h3>
+        </div>
+        <div class="grid grid-cols-4 gap-2 max-w-sm mx-auto mb-4">${pillarHtml}</div>
+        <div class="max-w-sm mx-auto space-y-1.5 mb-6">${barHtml}</div>
+        <div class="space-y-2.5 text-sm text-slate-600 leading-relaxed bg-slate-50 rounded-2xl p-4 border border-slate-200/80 mb-6">
+          ${readingLines.map((l) => `<p>${l}</p>`).join('')}
+        </div>
+        <div class="flex flex-wrap justify-center gap-2.5 mb-4">
+          ${nums.map((p) => `<div class="lotto-ball ${getBallColorClass(p.n)} w-12 h-12 md:w-14 md:h-14 text-lg md:text-xl animate-ball-appear">${p.n}</div>`).join('')}
+        </div>
+        <div class="text-center text-xs text-slate-400 mb-2">조합 ${String.fromCharCode(65 + (gameIdx % 26))}</div>
+        <div class="mb-5">${ballsHtml}</div>
+        <div class="flex flex-col sm:flex-row gap-2.5 justify-center">
+          <button id="btnSajuAnother" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-2xl active:scale-95 transition">다른 조합 받기</button>
+          <button id="btnSajuCopy" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-2xl shadow-sm active:scale-95 transition">번호 복사</button>
+        </div>`;
+      out.classList.remove('hidden');
+      document.getElementById('btnSajuAnother').onclick = () => { sajuState.gameIdx += 1; renderSaju(); };
+      document.getElementById('btnSajuCopy').onclick = () => copyToClipboard(`[${nums.map((p) => p.n).join(', ')}]`);
+    }
+
+    function initSaju() {
+      const hourSel = document.getElementById('sajuHour');
+      hourSel.innerHTML = '<option value="">모름 (시주 제외)</option>' + HOUR_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('');
+
+      const form = document.getElementById('sajuForm');
+      try {
+        const saved = JSON.parse(localStorage.getItem('sajuInput') || 'null');
+        if (saved) {
+          form.sajuName.value = saved.name || '';
+          form.sajuBirth.value = saved.birth || '';
+          hourSel.value = saved.hour || '';
+        }
+      } catch (e) {}
+
+      form.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const birth = form.sajuBirth.value;
+        if (!birth) { showToast('생년월일을 입력해 주세요.'); return; }
+        const [y, m, d] = birth.split('-').map(Number);
+        if (y < 1900 || y > new Date().getFullYear()) { showToast('1900년 이후 생년월일을 입력해 주세요.'); return; }
+        const hourVal = hourSel.value;
+        const input = {
+          name: form.sajuName.value.trim().slice(0, 20),
+          y, m, d,
+          hour: hourVal === '' ? null : Number(hourVal),
+          hasHour: hourVal !== ''
+        };
+        try { localStorage.setItem('sajuInput', JSON.stringify({ name: input.name, birth, hour: hourVal })); } catch (e) {}
+        sajuState = { input, analysis: analyzeSaju(input, new Date()), gameIdx: 0 };
+        renderSaju();
+      });
+
+      // 탭 전환
+      const tabs = { random: ['tabRandom', 'randomPanel'], saju: ['tabSaju', 'sajuPanel'] };
+      function showTab(key) {
+        Object.entries(tabs).forEach(([k, [btnId, panelId]]) => {
+          const on = k === key;
+          document.getElementById(panelId).classList.toggle('hidden', !on);
+          document.getElementById(btnId).classList.toggle('tab-active', on);
+        });
+      }
+      document.getElementById('tabRandom').onclick = () => showTab('random');
+      document.getElementById('tabSaju').onclick = () => showTab('saju');
+      showTab('saju');
+    }
+    initSaju();
 
     // 다크/라이트 테마 전환
     const btnTheme = document.getElementById('btnTheme');
