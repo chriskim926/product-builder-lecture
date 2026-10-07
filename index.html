@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>행운의 로또 6/45 번호 생성기</title>
+  <meta name="description" content="생년월일로 보는 이번 주 사주 로또 번호와 풀이, 랜덤 번호 추첨까지. 재미로 즐기는 로또 6/45 번호 생성기.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="이번 주 내 사주와 잘 맞는 로또 번호 🍀">
+  <meta property="og:description" content="생년월일로 사주 오행을 풀이하고, 이번 주 기운과 어울리는 로또 6/45 번호를 골라 드려요. (재미용 콘텐츠)">
+  <meta property="og:url" content="https://chriskim926.github.io/product-builder-lecture/">
+  <meta property="og:locale" content="ko_KR">
+  <meta name="twitter:card" content="summary">
   <!-- Tailwind CSS CDN -->
   <script>
     // 저장된 테마 또는 시스템 설정을 렌더 전에 적용 (깜빡임 방지)
@@ -147,7 +154,8 @@
 
   <div class="w-full max-w-4xl mx-auto px-4 py-8 md:py-12">
     <!-- 테마 전환 버튼 -->
-    <div class="flex justify-end mb-2">
+    <div class="flex justify-end gap-2 mb-2">
+      <button id="btnShare" type="button" class="px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs md:text-sm font-semibold shadow-sm hover:bg-slate-50 transition active:scale-95">🔗 공유하기</button>
       <button id="btnTheme" type="button" class="px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs md:text-sm font-semibold shadow-sm hover:bg-slate-50 transition active:scale-95" aria-label="다크 모드 전환"></button>
     </div>
     <!-- 헤더 영역 -->
@@ -174,22 +182,30 @@
       <div id="sajuPanel" class="space-y-6">
         <section class="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/70 border border-slate-200/60">
           <h2 class="text-lg md:text-xl font-bold text-slate-800 mb-1">나의 사주 입력</h2>
-          <p class="text-xs md:text-sm text-slate-500 mb-5">생년월일(양력)과 태어난 시간으로 사주 오행을 분석하고, 이번 주 기운과 잘 맞는 번호를 골라 드려요. 입력한 정보는 이 기기 안에서만 처리돼요.</p>
-          <form id="sajuForm" autocomplete="off" class="grid gap-4 sm:grid-cols-3">
+          <p class="text-xs md:text-sm text-slate-500 mb-5">생년월일(양력·음력)과 태어난 시간으로 사주 오행을 분석하고, 이번 주 기운과 잘 맞는 번호를 골라 드려요. 입력한 정보는 이 기기 안에서만 처리돼요.</p>
+          <form id="sajuForm" class="grid gap-4 sm:grid-cols-2">
             <label class="block text-sm font-semibold text-slate-600">이름 (선택)
               <input name="sajuName" id="sajuName" type="text" maxlength="20" placeholder="홍길동" class="saju-input mt-1.5">
-            </label>
-            <label class="block text-sm font-semibold text-slate-600">생년월일 (양력)
-              <div class="grid grid-cols-[1.3fr_1fr_1fr] gap-2 mt-1.5">
-                <select id="sajuYear" aria-label="출생 연도" required class="saju-input"></select>
-                <select id="sajuMonth" aria-label="출생 월" required class="saju-input"></select>
-                <select id="sajuDay" aria-label="출생 일" required class="saju-input"></select>
-              </div>
             </label>
             <label class="block text-sm font-semibold text-slate-600">태어난 시간
               <select name="sajuHour" id="sajuHour" class="saju-input mt-1.5"></select>
             </label>
-            <div class="sm:col-span-3 flex justify-center">
+            <div class="sm:col-span-2">
+              <div class="text-sm font-semibold text-slate-600 mb-1.5">생년월일</div>
+              <div class="grid grid-cols-4 gap-2">
+                <select name="sajuCal" id="sajuCal" class="saju-input" aria-label="양력 또는 음력">
+                  <option value="solar">양력</option>
+                  <option value="lunar">음력</option>
+                </select>
+                <input name="sajuYear" id="sajuYear" type="number" inputmode="numeric" min="1900" max="2100" placeholder="년 (1990)" required class="saju-input" aria-label="년">
+                <select name="sajuMonth" id="sajuMonth" required class="saju-input" aria-label="월"></select>
+                <select name="sajuDay" id="sajuDay" required class="saju-input" aria-label="일"></select>
+              </div>
+              <label id="sajuLeapWrap" class="hidden mt-2 inline-flex items-center gap-2 text-sm text-slate-600">
+                <input type="checkbox" name="sajuLeap" id="sajuLeap"> 윤달이에요
+              </label>
+            </div>
+            <div class="sm:col-span-2 flex justify-center">
               <button type="submit" class="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white font-bold text-base md:text-lg rounded-2xl shadow-lg shadow-amber-500/30 transition duration-150">
                 내 사주로 번호 받기
               </button>
@@ -658,6 +674,23 @@
       return pillars;
     }
 
+    // 음력 → 양력 변환 (Intl 중국력 이용, 해당 음력 연도 범위의 날짜를 탐색)
+    function lunarToSolar(ly, lm, ld, isLeap) {
+      let fmt;
+      try { fmt = new Intl.DateTimeFormat('en-u-ca-chinese', { year: 'numeric', month: 'numeric', day: 'numeric' }); } catch (e) { return null; }
+      const end = new Date(ly + 1, 2, 1);
+      for (let dt = new Date(ly, 0, 1); dt < end; dt.setDate(dt.getDate() + 1)) {
+        const parts = {};
+        fmt.formatToParts(dt).forEach((p) => { parts[p.type] = p.value; });
+        if (!parts.month || Number(parts.relatedYear) !== ly) continue;
+        const leap = /bis$/.test(parts.month);
+        if (Number(parts.month.replace('bis', '')) === lm && Number(parts.day) === ld && leap === !!isLeap) {
+          return { y: dt.getFullYear(), m: dt.getMonth() + 1, d: dt.getDate() };
+        }
+      }
+      return null;
+    }
+
     function hashString(str) {
       let h = 1779033703 ^ str.length;
       for (let i = 0; i < str.length; i++) {
@@ -824,6 +857,7 @@
         `이번 주(${fmtDate(a.weekStart)}~) 흐름은 <strong>${ELEMENTS_H[a.weekTop]}(${a.weekTop})</strong> 기운이 가장 강해요. ${WEEK_EL_TEXT[a.weekTop]}`,
         `그래서 이번 주 나와 잘 맞는 기운은 <strong>${a.ranked.slice(0, 2).map((e) => `${ELEMENTS_H[e]}(${e})`).join(' → ')}</strong> 순서예요. 이 기운에 해당하는 번호(하도 수리 기준)를 더 높은 비중으로 골랐어요.`
       ];
+      if (input.lunarNote) readingLines.unshift(input.lunarNote);
       if (!input.hasHour) readingLines.push('태어난 시간을 입력하지 않아 시주(時柱)는 제외하고 풀이했어요.');
 
       const ballsHtml = nums.map((p) => `
@@ -864,44 +898,70 @@
       hourSel.innerHTML = '<option value="">모름 (시주 제외)</option>' + HOUR_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join('');
 
       const form = document.getElementById('sajuForm');
-      // 개인정보 보호: 입력값은 저장하지 않고, 예전 버전이 남긴 저장값도 삭제한다
-      try { localStorage.removeItem('sajuInput'); } catch (e) {}
-
-      // 연·월·일 스크롤 선택
-      const yearSel = document.getElementById('sajuYear');
       const monthSel = document.getElementById('sajuMonth');
       const daySel = document.getElementById('sajuDay');
-      const thisYear = new Date().getFullYear();
-      yearSel.innerHTML = '<option value="">연도</option>';
-      for (let y = thisYear; y >= 1900; y--) yearSel.innerHTML += `<option value="${y}">${y}년</option>`;
-      monthSel.innerHTML = '<option value="">월</option>';
-      for (let m = 1; m <= 12; m++) monthSel.innerHTML += `<option value="${m}">${m}월</option>`;
-      function fillDays() {
-        const prev = daySel.value;
-        const y = Number(yearSel.value) || 2000; // 연도 미선택 시 윤년(2000) 기준
-        const m = Number(monthSel.value) || 1;
-        const last = new Date(y, m, 0).getDate();
-        daySel.innerHTML = '<option value="">일</option>';
-        for (let d = 1; d <= last; d++) daySel.innerHTML += `<option value="${d}">${d}일</option>`;
-        if (prev && Number(prev) <= last) daySel.value = prev;
-      }
-      yearSel.addEventListener('change', fillDays);
-      monthSel.addEventListener('change', fillDays);
-      fillDays();
+      const calSel = document.getElementById('sajuCal');
+      const leapWrap = document.getElementById('sajuLeapWrap');
+      monthSel.innerHTML = '<option value="">월</option>' + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}월</option>`).join('');
+      daySel.innerHTML = '<option value="">일</option>' + Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}일</option>`).join('');
+      calSel.addEventListener('change', () => {
+        const lunar = calSel.value === 'lunar';
+        leapWrap.classList.toggle('hidden', !lunar);
+        if (!lunar) form.sajuLeap.checked = false;
+      });
+
+      try {
+        const saved = JSON.parse(localStorage.getItem('sajuInput') || 'null');
+        if (saved) {
+          form.sajuName.value = saved.name || '';
+          form.sajuYear.value = saved.y || '';
+          monthSel.value = saved.m || '';
+          daySel.value = saved.d || '';
+          calSel.value = saved.cal || 'solar';
+          form.sajuLeap.checked = !!saved.leap;
+          hourSel.value = saved.hour || '';
+          calSel.dispatchEvent(new Event('change'));
+        }
+      } catch (e) {}
 
       form.addEventListener('submit', (ev) => {
         ev.preventDefault();
-        if (!yearSel.value || !monthSel.value || !daySel.value) { showToast('생년월일을 모두 선택해 주세요.'); return; }
-        const y = Number(yearSel.value), m = Number(monthSel.value), d = Number(daySel.value);
+        const cal = calSel.value;
+        const leap = cal === 'lunar' && form.sajuLeap.checked;
+        let y = Number(form.sajuYear.value), m = Number(monthSel.value), d = Number(daySel.value);
+        if (!y || !m || !d) { showToast('생년월일을 모두 입력해 주세요.'); return; }
+        if (y < 1900 || y > new Date().getFullYear()) { showToast('1900년 이후 생년월일을 입력해 주세요.'); return; }
         const hourVal = hourSel.value;
+        const origin = { cal, y, m, d, leap };
+        let lunarNote = null;
+        if (cal === 'lunar') {
+          const solar = lunarToSolar(y, m, d, leap);
+          if (!solar) { showToast('존재하지 않는 음력 날짜예요. 날짜(윤달 여부)를 확인해 주세요.'); return; }
+          lunarNote = `음력 ${y}.${leap ? '윤' : ''}${m}.${d} → 양력 ${solar.y}.${solar.m}.${solar.d}로 변환해 풀이했어요.`;
+          ({ y, m, d } = solar);
+        } else {
+          const t = new Date(y, m - 1, d);
+          if (t.getFullYear() !== y || t.getMonth() !== m - 1 || t.getDate() !== d) { showToast('존재하지 않는 날짜예요.'); return; }
+        }
         const input = {
           name: form.sajuName.value.trim().slice(0, 20),
           y, m, d,
           hour: hourVal === '' ? null : Number(hourVal),
-          hasHour: hourVal !== ''
+          hasHour: hourVal !== '',
+          lunarNote
         };
+        try { localStorage.setItem('sajuInput', JSON.stringify({ name: input.name, ...origin, hour: hourVal })); } catch (e) {}
         sajuState = { input, analysis: analyzeSaju(input, new Date()), gameIdx: 0 };
         renderSaju();
+      });
+
+      document.getElementById('btnShare').addEventListener('click', async () => {
+        const url = location.href.split('#')[0];
+        const data = { title: '이번 주 내 사주와 잘 맞는 로또 번호', text: '생년월일로 보는 이번 주 사주 로또 번호 (재미용)', url };
+        try {
+          if (navigator.share) { await navigator.share(data); return; }
+        } catch (e) { return; }
+        copyToClipboard(url);
       });
 
       // 탭 전환
