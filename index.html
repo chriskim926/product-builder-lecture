@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>행운의 로또 6/45 번호 생성기</title>
-  <meta name="description" content="생년월일로 보는 이번 주 사주 로또 번호와 풀이, 랜덤 번호 추첨까지. 재미로 즐기는 로또 6/45 번호 생성기.">
+  <meta name="description" content="내 사주 오행을 풀이하고, 이번 주 나에게 좋은 기운을 주는 번호를 알려 드려요. 랜덤 번호 추첨도 가능한 로또 6/45 번호 생성기 (재미용).">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="이번 주 내 사주와 잘 맞는 로또 번호 🍀">
-  <meta property="og:description" content="생년월일로 사주 오행을 풀이하고, 이번 주 기운과 어울리는 로또 6/45 번호를 골라 드려요. (재미용 콘텐츠)">
+  <meta property="og:title" content="사주로 찾은 나에게 좋은 기운의 로또 번호 🍀">
+  <meta property="og:description" content="내 사주 오행을 풀이하고, 이번 주 나에게 좋은 기운을 주는 번호를 골라 드려요. (재미용 콘텐츠)">
   <meta property="og:url" content="https://chriskim926.github.io/product-builder-lecture/">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:image" content="https://chriskim926.github.io/product-builder-lecture/og-image.png">
@@ -186,7 +186,7 @@
       <div id="sajuPanel" class="space-y-6">
         <section class="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/70 border border-slate-200/60">
           <h2 class="text-lg md:text-xl font-bold text-slate-800 mb-1">나의 사주 입력</h2>
-          <p class="text-xs md:text-sm text-slate-500 mb-5">생년월일(양력·음력)과 태어난 시간으로 사주 오행을 분석하고, 이번 주 기운과 잘 맞는 번호를 골라 드려요. 입력한 정보는 저장되지 않고 이 기기 안에서만 처리돼요.</p>
+          <p class="text-xs md:text-sm text-slate-500 mb-5">생년월일(양력·음력)과 태어난 시간으로 사주 오행을 분석하고, 나에게 좋은 기운을 주는 이번 주 번호를 골라 드려요. 입력한 정보는 서버로 전송되지 않고 이 기기 안에서만 처리·저장돼요.</p>
           <form id="sajuForm" autocomplete="off" class="grid gap-4 sm:grid-cols-2">
             <label class="block text-sm font-semibold text-slate-600">이름 (선택)
               <input name="sajuName" id="sajuName" type="text" maxlength="20" placeholder="홍길동" class="saju-input mt-1.5">
@@ -721,14 +721,6 @@
       if (CONTROLS[dayEl] === el) return '재성';
       return '관성';
     }
-    const ROLE_TEXT = {
-      비겁: '나와 같은 기운(힘·자신감)',
-      인성: '나를 도와주는 기운(귀인·학습)',
-      식상: '내가 펼치는 기운(표현·재능)',
-      재성: '내가 다루는 기운(재물·결과)',
-      관성: '나를 단련하는 기운(책임·명예)'
-    };
-
     function getWeekStart(now) {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       d.setDate(d.getDate() - mod(d.getDay() - 1, 7)); // 월요일 시작
@@ -812,20 +804,6 @@
       return picked.map((p) => ({ ...p, birthTag: birthNums[p.n] || null }));
     }
 
-    function numberReason(p, analysis) {
-      const role = roleOf(analysis.dayEl, p.el);
-      const parts = [];
-      const cnt = analysis.natal[p.el];
-      const elName = `${ELEMENTS_H[p.el]}(${p.el})`;
-      if (cnt === 0) parts.push(`내 사주에 ${elName} 기운이 없어 채워 주는 수`);
-      else if (cnt === 1) parts.push(`내 사주에 ${elName} 기운이 적어 보강해 주는 수`);
-      else parts.push(`내 사주의 ${elName} 기운(${cnt}개)과 어울리는 수`);
-      parts.push(`${ROLE_TEXT[role]}`);
-      if (p.el === analysis.weekTop) parts.push('이번 주 가장 강한 기운');
-      if (p.birthTag) parts.push(`내 ${p.birthTag}와 같은 숫자`);
-      return parts.join(' · ');
-    }
-
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     let sajuState = null; // { input, analysis, gameIdx }
@@ -859,24 +837,15 @@
         `<strong>일간 ${dayStemName} · ${ELEMENTS_H[a.dayEl]}(${a.dayEl})</strong> — ${DAY_MASTER_TEXT[a.dayEl]}`,
         `사주 전체로는 <strong>${ELEMENTS_H[strongestNatal]}(${strongestNatal})</strong> 기운이 가장 많고, ${lacking.length ? `<strong>${lacking.map((e) => `${ELEMENTS_H[e]}(${e})`).join(', ')}</strong> 기운이 비어 있어요.` : '다섯 기운이 모두 고르게 있어요.'} 나의 힘은 ${a.isStrong ? '비교적 강한 편이라, 기운을 펼쳐 쓰는 식상·재성·관성 기운이 균형을 맞춰 줘요.' : '비교적 여린 편이라, 나를 도와주는 인성·비겁 기운이 힘이 돼요.'}`,
         `이번 주(${fmtDate(a.weekStart)}~) 흐름은 <strong>${ELEMENTS_H[a.weekTop]}(${a.weekTop})</strong> 기운이 가장 강해요. ${WEEK_EL_TEXT[a.weekTop]}`,
-        `그래서 이번 주 나와 잘 맞는 기운은 <strong>${a.ranked.slice(0, 2).map((e) => `${ELEMENTS_H[e]}(${e})`).join(' → ')}</strong> 순서예요. 이 기운에 해당하는 번호(하도 수리 기준)를 더 높은 비중으로 골랐어요.`
+        `그래서 이번 주 ${nameLabel}에게 좋은 기운을 주는 오행은 <strong>${a.ranked.slice(0, 2).map((e) => `${ELEMENTS_H[e]}(${e})`).join(' → ')}</strong> 순서예요. 부족한 기운은 채워 주고 이번 주 흐름과 조화를 이루는 기운이라, 이 오행에 해당하는 번호(하도 수리 기준)를 중심으로 골랐어요.`
       ];
       if (input.lunarNote) readingLines.unshift(input.lunarNote);
       if (!input.hasHour) readingLines.push('태어난 시간을 입력하지 않아 시주(時柱)는 제외하고 풀이했어요.');
 
-      const ballsHtml = nums.map((p) => `
-        <div class="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
-          <div class="lotto-ball ${getBallColorClass(p.n)} w-11 h-11 text-base shrink-0">${p.n}</div>
-          <div class="text-sm leading-snug">
-            <span class="font-bold" style="color:${EL_COLOR[p.el]}">${ELEMENTS_H[p.el]}</span>
-            <span class="text-slate-600">${numberReason(p, a)}</span>
-          </div>
-        </div>`).join('');
-
       out.innerHTML = `
         <div class="text-center mb-5">
           <div class="text-xs font-bold tracking-widest text-slate-400">THIS WEEK · ${fmtDate(a.weekStart)} ~</div>
-          <h3 class="text-xl md:text-2xl font-black text-slate-900 mt-1">${nameLabel}의 이번 주 사주 로또</h3>
+          <h3 class="text-xl md:text-2xl font-black text-slate-900 mt-1">${nameLabel}에게 좋은 기운을 주는 이번 주 번호</h3>
         </div>
         <div class="grid grid-cols-4 gap-2 max-w-sm mx-auto mb-4">${pillarHtml}</div>
         <div class="max-w-sm mx-auto space-y-1.5 mb-6">${barHtml}</div>
@@ -886,8 +855,7 @@
         <div class="flex flex-wrap justify-center gap-2.5 mb-4">
           ${nums.map((p) => `<div class="lotto-ball ${getBallColorClass(p.n)} w-12 h-12 md:w-14 md:h-14 text-lg md:text-xl animate-ball-appear">${p.n}</div>`).join('')}
         </div>
-        <div class="text-center text-xs text-slate-400 mb-2">조합 ${String.fromCharCode(65 + (gameIdx % 26))}</div>
-        <div class="mb-5">${ballsHtml}</div>
+        <div class="text-center text-xs text-slate-400 mb-5">좋은 기운의 번호 · 조합 ${String.fromCharCode(65 + (gameIdx % 26))}</div>
         <div class="flex flex-col sm:flex-row gap-2.5 justify-center">
           <button id="btnSajuAnother" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-2xl active:scale-95 transition">다른 조합 받기</button>
           <button id="btnSajuCopy" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-2xl shadow-sm active:scale-95 transition">번호 복사</button>
@@ -951,7 +919,7 @@
 
       document.getElementById('btnShare').addEventListener('click', async () => {
         const url = location.href.split('#')[0];
-        const data = { title: '이번 주 내 사주와 잘 맞는 로또 번호', text: '생년월일로 보는 이번 주 사주 로또 번호 (재미용)', url };
+        const data = { title: '사주로 찾은 나에게 좋은 기운의 로또 번호', text: '내 사주 오행을 풀이하고, 이번 주 나에게 좋은 기운을 주는 번호를 알려 드려요 (재미용)', url };
         try {
           if (navigator.share) { await navigator.share(data); return; }
         } catch (e) { return; }
