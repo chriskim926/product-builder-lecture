@@ -159,7 +159,14 @@
   <div class="w-full max-w-4xl mx-auto px-4 py-8 md:py-12">
     <!-- 테마 전환 버튼 -->
     <div class="flex justify-end gap-2 mb-2">
-      <button id="btnShare" type="button" class="px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs md:text-sm font-semibold shadow-sm hover:bg-slate-50 transition active:scale-95">🔗 공유하기</button>
+      <div class="relative">
+        <button id="btnShare" type="button" aria-haspopup="true" aria-expanded="false" class="px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs md:text-sm font-semibold shadow-sm hover:bg-slate-50 transition active:scale-95">🔗 공유하기</button>
+        <div id="shareMenu" class="hidden absolute right-0 mt-2 w-44 z-40 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 text-sm font-semibold text-slate-700">
+          <button id="btnShareKakao" type="button" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 text-left"><span class="inline-block w-5 h-5 rounded-md text-center text-[11px] leading-5 font-black" style="background:#FEE500;color:#191919">K</span>카카오톡</button>
+          <button id="btnShareCopy" type="button" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 text-left"><span class="w-5 text-center">🔗</span>링크 복사</button>
+          <button id="btnShareMore" type="button" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 text-left"><span class="w-5 text-center">📤</span>다른 앱으로</button>
+        </div>
+      </div>
       <button id="btnTheme" type="button" class="px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs md:text-sm font-semibold shadow-sm hover:bg-slate-50 transition active:scale-95" aria-label="다크 모드 전환"></button>
     </div>
     <!-- 헤더 영역 -->
@@ -917,13 +924,59 @@
         renderSaju();
       });
 
-      document.getElementById('btnShare').addEventListener('click', async () => {
-        const url = location.href.split('#')[0];
-        const data = { title: '사주로 찾은 나에게 좋은 기운의 로또 번호', text: '내 사주 오행을 풀이하고, 이번 주 나에게 좋은 기운을 주는 번호를 알려 드려요 (재미용)', url };
-        try {
-          if (navigator.share) { await navigator.share(data); return; }
-        } catch (e) { return; }
-        copyToClipboard(url);
+      // 공유
+      const SITE_URL = 'https://chriskim926.github.io/product-builder-lecture/';
+      const SHARE_IMAGE = SITE_URL + 'og-image.png';
+      // 카카오 디벨로퍼스(developers.kakao.com)에서 발급한 JavaScript 키를 넣으면 카카오톡 공유창이 바로 열립니다.
+      const KAKAO_JS_KEY = '';
+      const shareTitle = '사주로 찾은 나에게 좋은 기운의 로또 번호';
+      const shareText = '내 사주 오행을 풀이하고, 이번 주 나에게 좋은 기운을 주는 번호를 알려 드려요 (재미용)';
+      const shareMenu = document.getElementById('shareMenu');
+      const btnShare = document.getElementById('btnShare');
+      const setMenu = (open) => {
+        shareMenu.classList.toggle('hidden', !open);
+        btnShare.setAttribute('aria-expanded', String(open));
+      };
+      btnShare.addEventListener('click', (e) => { e.stopPropagation(); setMenu(shareMenu.classList.contains('hidden')); });
+      document.addEventListener('click', (e) => { if (!shareMenu.contains(e.target)) setMenu(false); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+
+      async function nativeShare() {
+        if (!navigator.share) return false;
+        try { await navigator.share({ title: shareTitle, text: shareText, url: SITE_URL }); } catch (e) { /* 사용자가 취소 */ }
+        return true;
+      }
+      function loadKakao() {
+        return new Promise((resolve, reject) => {
+          if (window.Kakao) return resolve(window.Kakao);
+          const sc = document.createElement('script');
+          sc.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+          sc.onload = () => resolve(window.Kakao);
+          sc.onerror = reject;
+          document.head.appendChild(sc);
+        });
+      }
+      document.getElementById('btnShareKakao').addEventListener('click', async () => {
+        setMenu(false);
+        if (KAKAO_JS_KEY) {
+          try {
+            const K = await loadKakao();
+            if (!K.isInitialized()) K.init(KAKAO_JS_KEY);
+            K.Share.sendDefault({
+              objectType: 'feed',
+              content: { title: shareTitle, description: shareText, imageUrl: SHARE_IMAGE, imageWidth: 1200, imageHeight: 630, link: { mobileWebUrl: SITE_URL, webUrl: SITE_URL } },
+              buttons: [{ title: '내 번호 받으러 가기', link: { mobileWebUrl: SITE_URL, webUrl: SITE_URL } }]
+            });
+            return;
+          } catch (e) { /* 아래 대체 방법 사용 */ }
+        }
+        // 키가 없거나 SDK를 불러오지 못한 경우: 휴대폰은 공유창(카카오톡 선택), PC는 링크 복사
+        if (!(await nativeShare())) copyToClipboard(SITE_URL);
+      });
+      document.getElementById('btnShareCopy').addEventListener('click', () => { setMenu(false); copyToClipboard(SITE_URL); });
+      document.getElementById('btnShareMore').addEventListener('click', async () => {
+        setMenu(false);
+        if (!(await nativeShare())) copyToClipboard(SITE_URL);
       });
 
       // 탭 전환
